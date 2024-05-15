@@ -18,8 +18,6 @@ public class WhatsappRepository {
     private int customGroupCount;
     private int messageId;
 
-
-
     public WhatsappRepository(){
         this.groupMessageMap = new HashMap<Group, List<Message>>();
         this.groupUserMap = new HashMap<Group, List<User>>();
@@ -37,7 +35,6 @@ public class WhatsappRepository {
         }
 
         userMobile.add(mobile);
-
         User user=new User();
         user.setName(name);
         user.setMobile(mobile);
@@ -134,55 +131,62 @@ public class WhatsappRepository {
         //If user is not the admin, remove the user from the group, remove all its messages from all the databases, and update relevant attributes accordingly.
         //If user is removed successfully, return (the updated number of users in the group + the updated number of messages in group + the updated number of overall messages)
 
-        int updatedNoOfUser=0;
-        int updatedNoOfMsg=0;
-        int overallMsg=0;
-        List<Group> groupList=new ArrayList<>();
+        boolean userFound=false;
+        Group ansGroup=null;
+        int result=0;
 
-       for(Group group:groupUserMap.keySet()){
+        for(Group group: groupUserMap.keySet()){
+            List<User> userList=groupUserMap.get(group);
 
-          List<User> userList=groupUserMap.get(group);
-          for(User findUser: userList){
-
-              String name=findUser.getName();
-              if(name.equals(user.getName())){
-
-                  User newUser=adminMap.get(group);
-                  if(newUser.getName().equals(name)){//admin found
-                      throw new Exception("Cannot remove admin");
-                  }
-                  groupList.add(group);
-                  userList.remove(findUser); //remove user from group
-
-                  updatedNoOfUser=userList.size();
-              }
-
-          }
-       }
-
-       List<Message> msgList = new ArrayList<>();
-       //removing messages from senderMap
-        for(Message message:senderMap.keySet()){
-            User findUser=senderMap.get(message);
-            if(findUser.getName().equals(user.getName())){
-                msgList.add(message);
-                senderMap.remove(message);
-            }
-        }
-
-        //removing messages from Group also
-        for(Group newGroup:groupMessageMap.keySet()){
-            if(groupList.contains(newGroup)){
-                List<Message> list=groupMessageMap.get(newGroup);
-                for(Message message:list){
-                    if(msgList.contains(message)){
-                        list.remove(message);
-                        updatedNoOfMsg=list.size();
-                    }
+            if(userList.contains(user)){
+                if(adminMap.containsValue(user)){
+                    throw new Exception("Cannot remove admin");
                 }
+                userFound=true;
+                ansGroup=group;
+                break;
             }
         }
-        return updatedNoOfUser+updatedNoOfMsg+overallMsg;
+
+        if(userFound==false){
+            throw new Exception("User not found");
+        }
+        else{
+            List<User> updatedUser=new ArrayList<>();
+            for(User u:groupUserMap.get(ansGroup)){
+                if(u.equals(user)){
+                    continue;
+                }
+                updatedUser.add(u);
+            }
+            groupUserMap.put(ansGroup,updatedUser);
+
+            //groupmessageMap
+
+            List<Message> updatedMessages = new ArrayList<>();
+            for(Message m : groupMessageMap.get(ansGroup)){
+                if(senderMap.get(m).equals(user)){
+                    continue;
+                }
+                updatedMessages.add(m);
+            }
+            groupMessageMap.put(ansGroup, updatedMessages);
+
+            //sendermap
+
+            HashMap<Message,User> updatedSenderMap = new HashMap<>();
+            for(Message message : senderMap.keySet()){
+                if(senderMap.get(message).equals(user)){
+                    continue;
+                }
+                updatedSenderMap.put(message, senderMap.get(message));
+            }
+            senderMap = updatedSenderMap;
+
+            result=updatedUser.size()+updatedMessages.size()+updatedSenderMap.size();
+
+        }
+       return result;
 
     }
 
@@ -208,4 +212,3 @@ public class WhatsappRepository {
         return "";
     }
 }
-

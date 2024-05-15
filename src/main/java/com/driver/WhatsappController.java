@@ -28,12 +28,7 @@ public class WhatsappController {
 
         //If the mobile number exists in database, throw "User already exists" exception
         //Otherwise, create the user and return "SUCCESS"
-        try {
-            return whatsappService.createUser(name, mobile);
-        }
-        catch(Exception e){
-            throw new Exception(e.getMessage());
-        }
+        return whatsappService.createUser(name, mobile);
     }
 
     @PostMapping("/add-group")
