@@ -66,7 +66,7 @@ public class WhatsappRepository {
         adminMap.put(group,admin);
         return group;
     }
-    private static int messageCounter = 0;
+    private int messageCounter = 0;
 
     public int createMessage(String content) {
         // The 'i^th' created message has message id 'i'.
