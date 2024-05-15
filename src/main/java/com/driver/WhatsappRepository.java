@@ -56,22 +56,25 @@ public class WhatsappRepository {
             groupName=users.get(1).getName();
         }
         else{
-            groupName="Group"+(++customGroupCount);
+            customGroupCount++;
+            groupName= "Group " + customGroupCount;
         }
         group.setName(groupName);
-        group.setNumberOfParticipants(customGroupCount);
+        group.setNumberOfParticipants(users.size());
 
         groupUserMap.put(group,users);
         adminMap.put(group,admin);
         return group;
     }
+    private static int messageCounter = 0;
 
     public int createMessage(String content) {
         // The 'i^th' created message has message id 'i'.
         // Return the message id.
+       int id=++messageCounter;
         Message message=new Message();
 
-        message.setId(content.charAt(0)-'0');
+        message.setId(id);
         message.setContent(content);
 
         Date date=new Date();
@@ -84,20 +87,26 @@ public class WhatsappRepository {
         //Throw "Group does not exist" if the mentioned group does not exist
     //Throw "You are not allowed to send message" if the sender is not a member of the group
     //If the message is sent successfully, return the final number of messages in that group.
-        if(!groupUserMap.containsKey(group.getName())){
+        if(!groupUserMap.containsKey(group)){
             throw new Exception("Group does not exist");
+
         }
-        if(!groupUserMap.containsKey(sender.getName())){
+        // Check if the sender is a member of the group
+        List<User> members = groupUserMap.get(group);
+        if (!members.contains(sender)) {
             throw new Exception("You are not allowed to send message");
         }
 
-        List<Message> msgList=groupMessageMap.get(group);
-        msgList.add(message);
+        // Add the message to the group
+        List<Message> messages = groupMessageMap.getOrDefault(group, new ArrayList<>());
+        messages.add(message);
+        groupMessageMap.put(group, messages);
 
-        groupMessageMap.put(group,msgList);
+        // Map the message to its sender
+        senderMap.put(message, sender);
 
-        senderMap.put(message,sender);
-        return msgList.size();
+        // Return the total number of messages in the group
+        return messages.size();
 
     }
 
@@ -122,7 +131,7 @@ public class WhatsappRepository {
         }
         adminMap.remove(group);
         adminMap.put(group,user);
-        return "SUCESS";
+        return "SUCCESS";
     }
 
     public int removeUser(User user) throws Exception {
